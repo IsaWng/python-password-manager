@@ -1,3 +1,5 @@
+import json
+import os.path
 import random
 from tkinter import *
 from tkinter import messagebox
@@ -9,6 +11,29 @@ letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
            'w', 'x', 'y', 'z']
 numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 symbols = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '-', '=', '{', '}', '[', ']']
+
+password_file_path = "my_password.json"
+
+
+# ---------------------------- SEARCH PASSWORD ------------------------------- #
+
+def search_password():
+    website = website_input.get()
+    exist_website = False
+    try:
+        if os.path.getsize(password_file_path) != 0:
+            with open(file=password_file_path, mode="r") as pwd_file:
+                data = json.load(pwd_file)
+                exist_website = website in data
+                if exist_website:
+                    pwd_data = data.get(website)
+                    messagebox.showinfo(title=website,
+                                        message=f"UserName: {pwd_data.get("UserName")} \n Password: {pwd_data.get("Password")} \n")
+    except FileNotFoundError:
+        pass
+
+    if not exist_website:
+        messagebox.showinfo(title="opps", message=f"Not found any password for {website}")
 
 
 def generate_pwd():
@@ -23,9 +48,14 @@ def generate_pwd():
     password_input.insert(0, pwd)
 
 
+def save_password(data):
+    with open(file=password_file_path, mode="w") as pwd_file:
+        json.dump(data, pwd_file, indent=4)
+
+
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 def save_pwd():
-    website = website_input.get()
+    website = website_input.get().lower()
     user_name = email_username_input.get()
     pwd = password_input.get()
 
@@ -34,14 +64,37 @@ def save_pwd():
     else:
         is_ok = messagebox.askokcancel(title=f"{website}",
                                        message=f"UserName: {user_name} \n Password: {pwd} \n Is it Ok to add the password?")
+        password = {
+            website:
+                {
+                    "UserName": user_name,
+                    "Password": pwd
+                }
+        }
         if is_ok:
-            with open(file="my_password.txt", mode="a") as pwd_file:
-                pwd_file.write(f"{website} | {user_name} | {pwd} \n")
+            try:
+                # open the file in mode of read
+                if os.path.getsize(password_file_path) != 0:
+                    with open(file=password_file_path, mode="r") as pwd_file:
+                        data = json.load(pwd_file)
+                        data.update(password)
+                else:
+                    data = password
+            except FileNotFoundError:
+                # create the file
+                save_password(password)
+            else:
+                # load the data
+                save_password(data)
+            finally:
+                # write or update the file
                 website_input.delete(0, END)
                 password_input.delete(0, END)
 
 
 # ---------------------------- UI SETUP ------------------------------- #
+
+
 window = Tk()
 window.title("Password Manager")
 window.config(padx=20, pady=20)
@@ -54,9 +107,12 @@ canvas.grid(column=1, row=0)
 website_label = Label(text="Website: ")
 website_label.grid(column=0, row=1)
 
-website_input = Entry(width=46)
+website_input = Entry(width=26)
 website_input.grid(column=1, row=1, columnspan=2, sticky=W)
 website_input.focus()
+
+search_button = Button(text="Search", width=15, command=search_password)
+search_button.grid(column=2, row=1, sticky=W)
 
 email_username_label = Label(text="Email/UserName: ")
 email_username_label.grid(column=0, row=2)
