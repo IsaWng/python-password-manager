@@ -1,10 +1,18 @@
 import json
+import os
 import os.path
 import random
+import sys
 from tkinter import *
 from tkinter import messagebox
 
 import pyperclip
+
+# Determine the correct path to bundled files
+if getattr(sys, 'frozen', False):  # Running as an .exe
+    base_path = sys._MEIPASS  # Temporary extraction folder
+else:
+    base_path = os.path.dirname(os.path.abspath(__file__))  # Normal execution
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
@@ -12,17 +20,15 @@ letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
 numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 symbols = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '-', '=', '{', '}', '[', ']']
 
-password_file_path = "my_password.json"
-
 
 # ---------------------------- SEARCH PASSWORD ------------------------------- #
 
 def search_password():
-    website = website_input.get()
+    website = website_input.get().lower()
     exist_website = False
     try:
-        if os.path.getsize(password_file_path) != 0:
-            with open(file=password_file_path, mode="r") as pwd_file:
+        if os.path.getsize(my_password_path) != 0:
+            with open(file=my_password_path, mode="r") as pwd_file:
                 data = json.load(pwd_file)
                 exist_website = website in data
                 if exist_website:
@@ -49,7 +55,7 @@ def generate_pwd():
 
 
 def save_password(data):
-    with open(file=password_file_path, mode="w") as pwd_file:
+    with open(file=my_password_path, mode="w") as pwd_file:
         json.dump(data, pwd_file, indent=4)
 
 
@@ -74,8 +80,8 @@ def save_pwd():
         if is_ok:
             try:
                 # open the file in mode of read
-                if os.path.getsize(password_file_path) != 0:
-                    with open(file=password_file_path, mode="r") as pwd_file:
+                if os.path.getsize(my_password_path) != 0:
+                    with open(file=my_password_path, mode="r") as pwd_file:
                         data = json.load(pwd_file)
                         data.update(password)
                 else:
@@ -99,7 +105,7 @@ window = Tk()
 window.title("Password Manager")
 window.config(padx=20, pady=20)
 
-logo = PhotoImage(file="logo.png")
+logo = PhotoImage(file=logo_path)
 canvas = Canvas(width=200, height=200)
 canvas.create_image(100, 100, image=logo)
 canvas.grid(column=1, row=0)
